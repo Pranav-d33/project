@@ -1,0 +1,16 @@
+pydantic
+python-dotenv
+fastapi
+pandas
+redis
+google-generativeai
+vertexai
+uvicorn
+python-multipart
+pytest
+httpx
+starlette
+jinja2
+pytrends
+requests
+react

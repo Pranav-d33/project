@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Error - Walmart Forecast API</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="container mx-auto p-6 max-w-md">
+    <div class="text-center p-8 bg-white rounded-lg shadow-lg">
+      <!-- Error Icon -->
+      <div class="mb-6">
+        <svg class="mx-auto h-16 w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+      </div>
+      
+      <!-- Error Content -->
+      <h1 class="text-6xl font-bold text-red-600 mb-4">500</h1>
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Internal Server Error</h2>
+      <p class="text-lg text-gray-600 mb-6">Something went wrong on our end.</p>
+      <p class="text-gray-500 mb-8">We're working to fix this issue. Please try again later or contact support if the problem persists.</p>
+      
+      <!-- Action Buttons -->
+      <div class="space-y-3">
+        <a href="/web-ui" class="inline-block w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+          🏠 Return to Home
+        </a>
+        <a href="/health" class="inline-block w-full bg-gray-500 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+          📊 Check API Status
+        </a>
+        <button onclick="window.location.reload()" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+          🔄 Try Again
+        </button>
+      </div>
+      
+      <!-- Additional Info -->
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <p class="text-sm text-gray-500">
+          If you continue experiencing issues, please contact our support team.
+        </p>
+        <p class="text-xs text-gray-400 mt-2">
+          Error ID: {{ request.url.path if request else 'N/A' }} | Time: {{ moment().format('YYYY-MM-DD HH:mm:ss') if moment else 'N/A' }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional: Auto-redirect script -->
+  <script>
+    // Optional: Auto-redirect to home after 30 seconds
+    let countdown = 30;
+    const redirectTimer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(redirectTimer);
+        window.location.href = '/web-ui';
+      }
+    }, 1000);
+
+    // Clear timer if user interacts with page
+    document.addEventListener('click', () => {
+      clearInterval(redirectTimer);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forecast Dashboard</title>
+  <link href="/static/dist/output.css" rel="stylesheet">
+  <style>
+    /* Base Layout Fixes */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f9fc;
+    }
+
+    /* Constrain SVGs and Images */
+    svg, img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Dashboard Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1rem;
+      padding: 1rem;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background-color: #ffffff;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      height: fit-content;
+    }
+
+    .main-panel {
+      background-color: transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* KPI Header Strip */
+    .kpi-header {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .kpi-tile {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .kpi-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .kpi-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .kpi-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    /* Content Grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    /* Modal backdrop */
+    .modal-backdrop { 
+      position: fixed; 
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5); 
+      z-index: 9999; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+    }
+    
+    /* Ensure modal content is clickable */
+    .modal-content {
+      position: relative;
+      z-index: 10000;
+    }
+    
+    /* Premium Typewriter Animation for Narrative */
+    @keyframes narrative-typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    
+    .animate-typing {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid #64748b; /* Slate */
+      width: 0;
+      animation: narrative-typing 3s steps(40, end) forwards;
+    }
+    
+    /* Confidence Toast Notifications */
+    .confidence-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      max-width: 300px;
+    }
+    
+    .confidence-toast.show {
+      transform: translateX(0);
+    }
+    
+    .confidence-toast.warning {
+      background: linear-gradient(135deg, #f87171, #dc2626);
+    }
+    
+    .confidence-toast.success {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+    
+    /* Confidence Ring Component */
+    .confidence-ring-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease-in-out;
+      height: 100%;
+    }
+    
+    .confidence-ring-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .confidence-label {
+      font-weight: 600;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: #374151;
+      text-align: center;
+    }
+    
+    /* Story Mode Component */
+    .story-mode-tile {
+      padding: 1.5rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease-in-out;
+      height: 100%;
+    }
+    
+    .story-mode-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    #storyModeHeader {
+      font-weight: 700;
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 0.5rem;
+    }
+    
+    #storyList {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    
+    #storyList li {
+      font-size: 0.875rem;
+      margin: 0.75rem 0;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border-left: 3px solid #3b82f6;
+      border-radius: 6px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.4s ease;
+      position: relative;
+    }
+    
+    #storyList li::before {
+      content: "➤ ";
+      color: #3b82f6;
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+    
+    #storyList li.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    #storyList li:nth-child(even) {
+      background: #f1f5f9;
+      border-left-color: #10b981;
+    }
+    
+    #storyList li:nth-child(even)::before {
+      color: #10b981;
+    }
+
+    /* Chart Container */
+    .chart-container {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      grid-column: 1 / -1;
+      height: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-container h3 {
+      margin-bottom: 1rem;
+      flex-shrink: 0;
+    }
+
+    .chart-wrapper {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+    }
+
+    #trend-chart {
+      max-height: 300px !important;
+      width: 100% !important;
+    }
+
+    /* Narrative Container */
+    .narrative-container {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-grid">
+    <!-- Sidebar: Filters and Controls -->
+    <div class="sidebar">
+      <h3 class="font-semibold mb-4 text-lg">Filters & Controls</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">SKU</label>
+          <input type="text" id="filter-sku" class="w-full border rounded-lg p-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Date Range</label>
+          <input type="date" id="filter-start" class="w-full border rounded-lg p-2 text-sm mb-2" />
+          <input type="date" id="filter-end" class="w-full border rounded-lg p-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Location</label>
+          <select id="filter-store" class="w-full border rounded-lg p-2 text-sm">
+            <option value="">All Stores</option>
+          </select>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold mb-2">Signals</h4>
+          <div class="space-y-2">
+            <label class="flex items-center"><input type="checkbox" id="toggle-weather" checked class="mr-2" /> Weather</label>
+            <label class="flex items-center"><input type="checkbox" id="toggle-events" checked class="mr-2" /> Events</label>
+            <label class="flex items-center"><input type="checkbox" id="toggle-social" checked class="mr-2" /> Social Trends</label>
+          </div>
+        </div>
+
+        <!-- What-If Simulation Controls -->
+        <div class="bg-gray-50 p-4 rounded-lg space-y-4 mt-6">
+          <h4 class="font-semibold mb-2">⚙️ What‑If Scenarios</h4>
+          <div>
+            <label for="slider-weather" class="block text-sm font-medium text-gray-700 mb-1">Weather Severity</label>
+            <input type="range" id="slider-weather" min="0" max="3" step="1" value="0" class="w-full" />
+            <p class="text-xs text-gray-500 mt-1">
+              Severity: <span id="weather-value">0</span>/3
+            </p>
+          </div>
+          <div>
+            <label for="slider-promo" class="block text-sm font-medium text-gray-700 mb-1">Promotion Discount (%)</label>
+            <input type="range" id="slider-promo" min="0" max="100" step="5" value="0" class="w-full" />
+            <p class="text-xs text-gray-500 mt-1">
+              Discount: <span id="promo-value">0</span>%
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Panel: KPIs, Charts, and Analysis -->
+    <div class="main-panel">
+      <!-- KPI Header Strip -->
+      <div class="kpi-header">
+        <div class="kpi-tile">
+          <div class="kpi-title">Accuracy</div>
+          <div id="kpi-accuracy" class="kpi-value">--%</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-title">Next Run ETA</div>
+          <div id="kpi-eta" class="kpi-value">--:--</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-title">Avg Confidence</div>
+          <div id="kpi-confidence" class="kpi-value">--%</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-title">Data Freshness</div>
+          <div id="kpi-freshness" class="kpi-value">--m ago</div>
+        </div>
+      </div>
+
+      <!-- Inline KPI Details Drawer (hidden by default) -->
+      <div id="kpi-drawer" class="hidden bg-white p-4 rounded-lg shadow mt-4">
+        <button id="drawer-close" class="text-gray-500 hover:text-gray-800 mb-2">Close ⨉</button>
+        <div id="drawer-content" class="text-sm text-gray-700 font-mono">
+          <!-- details will be injected here -->
+        </div>
+      </div>
+      <!-- Container for Tiles -->
+      <div id="tile-container" class="grid grid-cols-4 gap-4 mb-4"></div>
+
+      <!-- Content Grid -->
+      <div class="content-grid">
+        <!-- Confidence Ring Component -->
+        <div class="confidence-ring-tile">
+          <canvas id="confidenceRing" width="120" height="120"></canvas>
+          <div id="confidenceText" class="confidence-label">Explanation Confidence</div>
+        </div>
+        
+        <!-- Story Mode Component -->
+        <div class="story-mode-tile">
+          <div id="storyModeHeader">📖 Story Mode</div>
+          <ul id="storyList"></ul>
+        </div>
+        
+        <!-- Chart Container -->
+        <div class="chart-container">
+          <h3 class="font-semibold mb-3 text-lg">Forecast Trends</h3>
+          <div class="chart-wrapper">
+            <canvas id="trend-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Scenario Narrative -->
+        <div class="narrative-container">
+          <h2 class="text-xl font-semibold text-slate-800 mb-2 flex items-center gap-2">
+            🧠 Scenario Narrative
+            <span id="confidence-badge" 
+                  class="text-sm bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium hidden"
+                  title="How reliable this AI explanation is, based on available signals and data quality."></span>
+          </h2>
+          <p class="text-slate-600 leading-relaxed" id="narrative-text">
+            <span id="typing-span" class="animate-typing">Loading explanation...</span>
+          </p>
+          
+          <!-- Detail Box for Dashboard Data -->
+          <div id="detail-box" class="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 font-mono">
+            Loading dashboard details...
+          </div>
+          
+          <!-- Confidence Analytics Section -->
+          <div id="confidence-analytics" class="mt-4 pt-4 border-t border-slate-100 hidden">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-medium text-slate-700">Confidence Analytics</h3>
+              <button id="toggle-analytics" class="text-xs text-blue-600 hover:text-blue-800">Hide Details</button>
+            </div>
+            
+            <!-- Sparkline Trend -->
+            <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Confidence Trend (Last 7 Explanations)</label>
+              <div class="h-8 bg-gray-50 rounded p-1">
+                <canvas id="confidence-sparkline" height="24"></canvas>
+              </div>
+            </div>
+            
+            <!-- Confidence Factors -->
+            <div id="confidence-factors" class="grid grid-cols-3 gap-3 text-xs hidden">
+              <div class="text-center">
+                <div class="text-gray-500">Signal Coverage</div>
+                <div id="signal-coverage" class="font-semibold text-slate-700">--%</div>
+              </div>
+              <div class="text-center">
+                <div class="text-gray-500">Historical Fit</div>
+                <div id="historical-fit" class="font-semibold text-slate-700">--%</div>
+              </div>
+              <div class="text-center">
+                <div class="text-gray-500">External Signals</div>
+                <div id="external-signals" class="font-semibold text-slate-700">--%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pinned Chat Agent -->
+  <div id="chat-agent" class="fixed right-0 bottom-0 m-4 bg-white p-4 rounded shadow-lg w-80 hidden">
+    <div class="flex justify-between items-center mb-2">
+      <h4 class="font-semibold">Why? Retail Copilot</h4>
+      <button id="close-chat">×</button>
+    </div>
+    <div id="chat-log" class="h-48 overflow-y-auto text-sm mb-2"></div>
+    <input id="chat-input" type="text" placeholder="Ask a question..." class="w-full border rounded p-1" />
+    <button id="chat-send" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">Send</button>
+  </div>
+  <button id="open-chat" class="fixed right-0 bottom-0 m-4 bg-blue-600 text-white p-3 rounded-full shadow-lg">?</button>
+
+  <!-- Story Mode -->
+  <div id="story-mode" class="fixed left-4 bottom-4 bg-white p-4 rounded shadow-lg w-64 typewriter-text hidden">
+    <ul id="story-list" class="list-disc pl-5"></ul>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Load dashboard data
+    loadKPIs();
+    loadTiles();
+    loadChart();
+    
+    // Initialize confidence ring with default value
+    drawConfidenceRing(0.75);
+    
+    // Initialize story mode with loading state
+    updateStoryMode(null);
+
+    // Fetch dashboard details
+    fetchDashboardDetails();
+
+    // Chat toggle logic
+    document.getElementById('open-chat').onclick = () => document.getElementById('chat-agent').classList.remove('hidden');
+    document.getElementById('close-chat').onclick = () => document.getElementById('chat-agent').classList.add('hidden');
+
+
+    // Re-load whenever any filter changes
+    [
+      'filter-sku','filter-start','filter-end','filter-store',
+      'toggle-weather','toggle-events','toggle-social',
+      'slider-weather','slider-promo'
+    ].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        loadTiles();
+        loadChart();
+      });
+    });
+
+    // What-If slider logic: update labels and call scenario refresh
+    const weatherSlider = document.getElementById('slider-weather');
+    const promoSlider   = document.getElementById('slider-promo');
+    const weatherValue  = document.getElementById('weather-value');
+    const promoValue    = document.getElementById('promo-value');
+
+    function onWhatIfChange() {
+      weatherValue.textContent = weatherSlider.value;
+      promoValue.textContent   = promoSlider.value;
+      // Re-run your explanation or chart loads to reflect new scenario
+      // For example, if you have a function `refreshScenario()`, call it here:
+      if (typeof refreshScenario === 'function') {
+        refreshScenario({
+          weather_severity: Number(weatherSlider.value),
+          promotion_discount: Number(promoSlider.value)
+        });
+      }
+    }
+    weatherSlider.addEventListener('input', onWhatIfChange);
+    promoSlider.addEventListener('input', onWhatIfChange);
+    
+    // Analytics toggle
+    document.getElementById('toggle-analytics').addEventListener('click', () => {
+      const analytics = document.getElementById('confidence-analytics');
+      const button = document.getElementById('toggle-analytics');
+      const isVisible = !analytics.classList.contains('hidden');
+      
+      if (isVisible) {
+        analytics.classList.add('hidden');
+        button.textContent = 'Show Details';
+      } else {
+        analytics.classList.remove('hidden');
+        button.textContent = 'Hide Details';
+      }
+    });
+  });
+
+  function buildFilters() {
+    const sku = document.getElementById('filter-sku').value;
+    const start = document.getElementById('filter-start').value;
+    const end   = document.getElementById('filter-end').value;
+    const store = document.getElementById('filter-store').value;
+    // signals checkboxes
+    const signals = [];
+    if (document.getElementById('toggle-weather').checked) signals.push('weather');
+    if (document.getElementById('toggle-events').checked)  signals.push('events');
+    if (document.getElementById('toggle-social').checked)  signals.push('social');
+    const params = new URLSearchParams();
+    if (sku)    params.append('sku', sku);
+    if (start)  params.append('start', start);
+    if (end)    params.append('end', end);
+    if (store)  params.append('store', store);
+    signals.forEach(s => params.append('signals', s));
+    return params.toString();
+  }
+
+  async function loadKPIs() {
+    try {
+      const res = await fetch('/api/dashboard/metrics');
+      const kpis = await res.json();
+      document.getElementById('kpi-accuracy').textContent = `${kpis.accuracy.toFixed(1)}%`;
+      document.getElementById('kpi-eta').textContent = kpis.next_run_eta;
+      document.getElementById('kpi-confidence').textContent = `${Math.round(kpis.avg_confidence*100)}%`;
+      document.getElementById('kpi-freshness').textContent = `${kpis.data_freshness_minutes}m ago`;
+    } catch (error) {
+      console.warn('Failed to load KPIs, using fallback data:', error);
+      // Fallback data for demo
+      document.getElementById('kpi-accuracy').textContent = '94.2%';
+      document.getElementById('kpi-eta').textContent = '3:00 PM';
+      document.getElementById('kpi-confidence').textContent = '82%';
+      document.getElementById('kpi-freshness').textContent = '10m ago';
+    }
+  }
+
+  async function loadTiles() {
+    const query = buildFilters();
+    try {
+      const res = await fetch(`/api/dashboard/tiles?${query}`);
+      const tiles = await res.json();
+      const container = document.getElementById('tile-container');
+      if (container) {
+        container.innerHTML = '';
+        tiles.forEach(t => {
+          const card = document.createElement('div');
+          card.className = 'bg-white p-4 rounded shadow';
+          card.innerHTML = `<h4 class="font-semibold text-gray-700 mb-1">${t.title}</h4><p class="text-2xl font-bold">${t.value}</p>`;
+          container.appendChild(card);
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to load tiles:', error);
+    }
+  }
+
+  // Fetch Dashboard Details Function
+  async function fetchDashboardDetails() {
+    const sku = document.getElementById('filter-sku').value || 'DEFAULT_SKU';
+    const store = document.getElementById('filter-store').value || 'DEFAULT_STORE';
+    const date = new Date().toISOString().split('T')[0];
+    
+    try {
+      // Fetch dashboard details using explain/single endpoint
+      const url = `/api/explain/single?sku=${encodeURIComponent(sku)}&store=${encodeURIComponent(store)}&date=${encodeURIComponent(date)}`;
+      const res = await fetch(url, { method: 'GET' });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const detail = await res.json();
+      document.getElementById('detail-box').innerText = JSON.stringify(detail, null, 2);
+    } catch (err) {
+      console.error('Failed to fetch dashboard details', err);
+      document.getElementById('detail-box').innerText = `Failed to load details. Error: ${err.message}`;
+    }
+  }
+
+  async function loadChart() {
+    const query = buildFilters();
+    try {
+      const res = await fetch(`/api/dashboard/chart?${query}`);
+      const data = await res.json();
+      const ctx = document.getElementById('trend-chart').getContext('2d');
+      
+      // Clear any existing chart
+      if (window.trendChart) {
+        window.trendChart.destroy();
+      }
+      
+      window.trendChart = new Chart(ctx, { 
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            label: 'Forecast Runs',
+            data: data.values,
+            fill: false,
+            tension: 0.1,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { display: true }, y: { display: true } }
+        }
+      });
+      await fetchExplanation();
+    } catch (error) {
+      console.warn('Failed to load chart data:', error);
+      // fallback chart ...
+      // existing fallback logic
+    }
+  }
+
+  // Add this new function to fetch explanation
+  async function fetchExplanation() {
+    const context = {
+      sku_id: document.getElementById('filter-sku').value || 'DEFAULT_SKU',
+      store_id: document.getElementById('filter-store').value || 'DEFAULT_STORE', 
+      forecast_date: new Date().toISOString().split('T')[0],
+      generated_at: new Date().toISOString().split('T')[0],
+      predicted_demand: 100, // Default value
+      weather_severity: Number(document.getElementById('slider-weather').value),
+      promotion_discount: Number(document.getElementById('slider-promo').value)
+    };
+
+    try {
+      const res = await fetch('/api/explain/single', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(context)
+      });
+      const explanation = await res.json();
+      updateNarrative(explanation);
+    } catch (e) {
+      updateNarrative({ narrative_explanation: "Unable to load explanation at this time." });
+    }
+  }
+
+  function updateNarrative(explanation) {
+    const target = document.getElementById("typing-span");
+    const badge = document.getElementById("confidence-badge");
+    
+    if (explanation.narrative_explanation) {
+      // Reset and retrigger typewriter animation
+      target.classList.remove("animate-typing");
+      void target.offsetWidth; // force reflow to retrigger animation
+      target.textContent = explanation.narrative_explanation;
+      target.classList.add("animate-typing");
+      
+      // Show confidence score if available
+      if (explanation.confidence_score !== undefined) {
+        let confidence = explanation.confidence_score || 0;
+        let colorClass = confidence > 0.85 ? "bg-green-100 text-green-800"
+                      : confidence > 0.6 ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800";
+
+        badge.className = `text-sm px-2 py-0.5 rounded-full font-medium ${colorClass}`;
+        badge.textContent = `Confidence: ${Math.round(explanation.confidence_score * 100)}%`;
+        badge.classList.remove("hidden");
+        
+        // Update the confidence ring
+        drawConfidenceRing(confidence);
+        
+        // Update story mode with explanation data
+        updateStoryMode(explanation);
+        
+        // Show analytics section and render additional features
+        const analytics = document.getElementById('confidence-analytics');
+        analytics.classList.remove('hidden');
+        
+        // Fetch and render confidence sparkline with real data
+        fetchAndRenderConfidenceTrend();
+        
+        // Show confidence factors if available
+        if (explanation.confidence_factors) {
+          renderConfidenceFactors(explanation.confidence_factors);
+        }
+        
+        // Show confidence-based alerts
+        showConfidenceAlert(confidence);
+      } else {
+        badge.classList.add("hidden");
+        document.getElementById('confidence-analytics').classList.add('hidden');
+        // Draw default confidence ring if no score available
+        drawConfidenceRing(0.75);
+        // Update story mode with default explanation
+        updateStoryMode(explanation);
+      }
+    } else {
+      target.textContent = "No narrative available for this forecast.";
+      badge.classList.add("hidden");
+      document.getElementById('confidence-analytics').classList.add('hidden');
+      // Draw default confidence ring
+      drawConfidenceRing(0.75);
+      // Update story mode with loading state
+      updateStoryMode(null);
+    }
+  }
+
+  // Update the refreshScenario function to use fetchExplanation
+  async function refreshScenario({ weather_severity, promotion_discount }) {
+    await fetchExplanation(); // This will use the current slider values
+  }
+
+  // Advanced Confidence Features
+  async function fetchAndRenderConfidenceTrend() {
+    try {
+      const sku = document.getElementById('filter-sku').value || 'DEFAULT_SKU';
+      const store = document.getElementById('filter-store').value || 'DEFAULT_STORE';
+      
+      const res = await fetch(`/api/dashboard/confidence-history?sku=${sku}&store=${store}`);
+      const data = await res.json();
+      
+      const confidenceScores = data.history.map(item => item.confidence);
+      renderConfidenceTrend(confidenceScores);
+    } catch (error) {
+      console.warn('Failed to fetch confidence history, using fallback data:', error);
+      // Fallback to mock data if API fails
+      renderConfidenceTrend([0.7, 0.8, 0.75, 0.9, 0.85, 0.88, 0.85]);
+    }
+  }
+
+  function renderConfidenceTrend(scores) {
+    const canvas = document.getElementById("confidence-sparkline");
+    const ctx = canvas.getContext('2d');
+    
+    // Clear any existing chart
+    if (window.confidenceChart) {
+      window.confidenceChart.destroy();
+    }
+    
+    window.confidenceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: scores.map((_, i) => `-${scores.length - 1 - i}`),
+        datasets: [{
+          data: scores,
+          borderColor: "#10b981",
+          backgroundColor: "rgba(16, 185, 129, 0.1)",
+          tension: 0.4,
+          pointRadius: 1,
+          pointHoverRadius: 3,
+          borderWidth: 2,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `Confidence: ${(context.parsed.y * 100).toFixed(1)}%`;
+              }
+            }
+          }
+        },
+        scales: { 
+          x: { display: false }, 
+          y: { 
+            display: false,
+            min: 0,
+            max: 1
+          }
+        },
+        elements: {
+          point: { hoverBackgroundColor: "#10b981" }
+        }
+      }
+    });
+  }
+
+  function renderConfidenceFactors(factors) {
+    const factorsDiv = document.getElementById('confidence-factors');
+    factorsDiv.classList.remove('hidden');
+    
+    document.getElementById('signal-coverage').textContent = `${Math.round(factors.signal_coverage * 100)}%`;
+    document.getElementById('historical-fit').textContent = `${Math.round(factors.historical_fit * 100)}%`;
+    document.getElementById('external-signals').textContent = `${Math.round(factors.external_news_strength * 100)}%`;
+  }
+
+  function showConfidenceAlert(score) {
+    // Remove any existing toasts
+    const existingToast = document.querySelector('.confidence-toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+    
+    let message, className;
+    
+    if (score < 0.5) {
+      message = "⚠️ This explanation may lack signal support.";
+      className = "warning";
+    } else if (score > 0.9) {
+      message = "✅ High confidence explanation with strong signal support.";
+      className = "success";
+    } else {
+      return; // No alert for medium confidence
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `confidence-toast ${className}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 5000);
+  }
+
+  // Confidence Ring Drawing Function
+  function drawConfidenceRing(score) {
+    const canvas = document.getElementById("confidenceRing");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 35;
+    const startAngle = -0.5 * Math.PI;
+    const endAngle = startAngle + (2 * Math.PI * score);
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background circle
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#e5e7eb";
+    ctx.lineWidth = 8;
+    ctx.stroke();
+
+    // Confidence arc
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.strokeStyle = score > 0.85 ? "#10b981" : score > 0.6 ? "#f59e0b" : "#ef4444";
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    // Text in center
+    ctx.font = "bold 16px sans-serif";
+    ctx.fillStyle = "#374151";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(Math.round(score * 100) + "%", centerX, centerY);
+  }
+
+  // Story Mode Animation Function
+  function typewriterBulletPoints(lines) {
+    const ul = document.getElementById("storyList");
+    if (!ul) return;
+    
+    ul.innerHTML = ""; // clear existing content
+    
+    lines.forEach((text, i) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      ul.appendChild(li);
+      
+      // Animate each bullet point with a delay
+      setTimeout(() => {
+        li.classList.add("visible");
+      }, i * 600); // 600ms delay between each item
+    });
+  }
+
+  // Update Story Mode with Dynamic Content
+  function updateStoryMode(explanation) {
+    let storyPoints = [];
+    
+    if (explanation && explanation.narrative_explanation) {
+      // Break down the narrative into key points
+      const narrative = explanation.narrative_explanation;
+      const sentences = narrative.split('.').filter(s => s.trim().length > 10);
+      
+      // Take first 3-4 sentences as story points
+      storyPoints = sentences.slice(0, 4).map(s => s.trim() + '.');
+      
+      // Add confidence info if available
+      if (explanation.confidence_score !== undefined) {
+        const confidencePercent = Math.round(explanation.confidence_score * 100);
+        storyPoints.push(`Explanation confidence: ${confidencePercent}%`);
+      }
+      
+      // Add top influencer if available
+      if (explanation.top_influencer) {
+        storyPoints.push(`Key factor: ${explanation.top_influencer}`);
+      }
+    } else {
+      // Default story points
+      storyPoints = [
+        "Analyzing current forecast data...",
+        "Checking weather patterns and trends...",
+        "Evaluating promotional impacts...",
+        "Building explanation narrative..."
+      ];
+    }
+    
+    typewriterBulletPoints(storyPoints);
+  }
+
+// Toggle drawer open/close
+function toggleKpiDrawer(metric) {
+  const drawer = document.getElementById('kpi-drawer');
+  const content = document.getElementById('drawer-content');
+  // If already open for same metric, just close
+  if (!drawer.classList.contains('hidden') && drawer.dataset.metric === metric) {
+    return closeKpiDrawer();
+  }
+  // Mark which metric is open
+  drawer.dataset.metric = metric;
+  content.textContent = 'Loading details…';
+  drawer.classList.remove('hidden');
+  // Fetch details
+  fetch(`/api/dashboard/drill?metric=${metric}`)
+    .then(res => res.json())
+    .then(data => {
+      content.innerHTML = `
+        <h4 class="font-semibold mb-2">${metric.charAt(0).toUpperCase()+metric.slice(1)} Details</h4>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      `;
+    })
+    .catch(err => {
+      content.textContent = `Error loading details: ${err.message}`;
+    });
+}
+function closeKpiDrawer() {
+  const drawer = document.getElementById('kpi-drawer');
+  drawer.classList.add('hidden');
+  delete drawer.dataset.metric;
+}
+
+// Attach globally
+window.toggleKpiDrawer = toggleKpiDrawer;
+window.closeKpiDrawer  = closeKpiDrawer;
+
+// Wire up KPI tiles once DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.kpi-tile').forEach(tile => {
+    const metric = tile.querySelector('.kpi-title').textContent.toLowerCase().replace(/ /g,'_');
+    tile.style.cursor = 'pointer';
+    tile.addEventListener('click', () => toggleKpiDrawer(metric));
+  });
+  document.getElementById('drawer-close').addEventListener('click', closeKpiDrawer);
+});
+
+</script>
+
+
+
+</body>
+</html>
+
+
+
+
+#http://127.0.0.1:8000/dashboard

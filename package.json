@@ -1,0 +1,31 @@
+{
+  "name": "walmart_hp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-css": "tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --minify",
+    "watch-css": "tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --watch",
+    "dev-css": "tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --watch --poll"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.8.3"
+  }
+}

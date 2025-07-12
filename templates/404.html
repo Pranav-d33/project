@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found - Walmart Forecast API</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="container mx-auto p-6 max-w-md">
+    <div class="text-center p-8 bg-white rounded-lg shadow-lg">
+      <!-- 404 Icon -->
+      <div class="mb-6">
+        <svg class="mx-auto h-16 w-16 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.17-2.34m-.99.99l2.828 2.829m0 0l2.829-2.829m-2.829 2.829l2.828-2.828M12 3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      
+      <!-- 404 Content -->
+      <h1 class="text-6xl font-bold text-blue-600 mb-4">404</h1>
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Page Not Found</h2>
+      <p class="text-lg text-gray-600 mb-6">The page you're looking for doesn't exist.</p>
+      <p class="text-gray-500 mb-8">It might have been moved, deleted, or you entered the wrong URL.</p>
+      
+      <!-- Action Buttons -->
+      <div class="space-y-3">
+        <a href="/web-ui" class="inline-block w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+          🏠 Go to Home
+        </a>
+        <a href="/docs" class="inline-block w-full bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+          📚 API Documentation
+        </a>
+        <button onclick="window.history.back()" class="w-full bg-gray-500 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+          ← Go Back
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
