@@ -1,11 +1,44 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Body
+from fastapi.responses import JSONResponse
 from typing import List, Dict, Any, Optional
 from datetime import datetime, date, timedelta
 from app.models.forecast_row import ForecastRow
 from app.models.forecast_explaination import ForecastExplanation
 from app.services.forecast_explainer import generate_forecast_explanation
+from app.services.storycards import generate_narrative_storycards
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
+
+@router.get("/copilot")
+async def get_copilot_response(default: bool = Query(False)):
+    """
+    If ?default=true is passed, return starter suggestions instead of dynamic LLM response.
+    """
+    if default:
+        return {
+            "greeting": "Hi 👋 I'm your Forecast Assistant. Ask me anything about demand trends, events, or promotions.",
+            "suggestions": [
+                "Why is raincoat demand rising in Mumbai?",
+                "What's the biggest influencer for SKU-432?",
+                "Which stores saw anomalies last week?",
+                "When is the next high-demand day in Bangalore?",
+            ]
+        }
+    # Optional: fallback logic for actual chat response
+    return JSONResponse(content={"message": "Chat response logic not implemented"}, status_code=501)
+
+@router.post("/copilot")
+async def copilot_handler(payload: Dict[str, Any] = Body(...)):
+    """
+    Handle natural language queries via Copilot: inject filters and call LLM agent.
+    """
+    query = payload.get("query")
+    filters = payload.get("filters", {})
+    if not query:
+        raise HTTPException(status_code=400, detail="Missing query")
+    # Delegate to copilot agent service
+    from app.services.copilot_agent import run_copilot_query
+    return run_copilot_query(query, filters)
 
 @router.get("/tiles", response_model=List[Dict[str, Any]])
 async def get_tiles(
@@ -38,19 +71,61 @@ async def get_chart_data(
     values = [base + i * 5 for i in range(len(dates))]
     return {"labels": dates, "values": values}
 
-# Drill-through endpoint for KPI details
-def drill_endpoint_contents(metric: str) -> Dict[str, Any]:
-    # Placeholder drill data
-    return {
-        "columns": ["SKU", "Detail1", "Detail2"],
-        "rows": [["SKU123", "Value A1", "Value B1"], ["SKU456", "Value A2", "Value B2"]]
-    }
+@router.get("/metrics", response_model=List[Dict[str, Any]])
+async def get_metrics(
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    sku: Optional[str] = Query(None, description="SKU filter"),
+    store: Optional[str] = Query(None, description="Store filter")
+):
+    """
+    Return KPI metric tiles for the dashboard.
+    """
+    # Mock data based on filters
+    return [
+        {
+            "key": "accuracy",
+            "title": "Forecast Accuracy",
+            "value": "87.3%",
+            "trend": "+2.1%",
+            "color": "green"
+        },
+        {
+            "key": "confidence",
+            "title": "Avg Confidence",
+            "value": "0.84",
+            "trend": "+0.05",
+            "color": "blue"
+        },
+        {
+            "key": "missed",
+            "title": "Missed Forecasts",
+            "value": "12",
+            "trend": "-3",
+            "color": "red"
+        },
+        {
+            "key": "override",
+            "title": "AI Overrides",
+            "value": "8",
+            "trend": "+1",
+            "color": "orange"
+        }
+    ]
 
 @router.get("/drill", response_model=Dict[str, Any])
 async def drill_down(metric: str = Query(..., description="KPI to drill into")):
-    return drill_endpoint_contents(metric)
+    """
+    Drill‑through data for a given KPI metric.
+    """
+    # Placeholder drill data; replace with real logic
+    columns = ["SKU", "Detail 1", "Detail 2"]
+    rows = [
+        ["SKU123", "Value A1", "Value B1"],
+        ["SKU456", "Value A2", "Value B2"],
+    ]
+    return {"columns": columns, "rows": rows}
 
-# Detail explanation endpoint for the modal
 @router.get("/detail", response_model=ForecastExplanation)
 async def get_detail(
     sku: str = Query(..., description="SKU identifier"),
@@ -92,8 +167,6 @@ async def get_detail(
     )
     return explanation
 
-
-
 @router.post("/chat", response_model=ForecastExplanation)
 async def chat_explain(query: Dict[str, Any]):
     """
@@ -104,22 +177,6 @@ async def chat_explain(query: Dict[str, Any]):
     base = ForecastRow(**query)
     # You could pass the question through to your LLM prompt logic
     return generate_forecast_explanation(base, extra_question=query.get("question"))
-
-# Drill‑through endpoint for KPI details
-@router.get("/drill", response_model=Dict[str, Any])
-async def drill_down(
-    metric: str = Query(..., description="KPI to drill into")
-):
-    """
-    Drill‑through data for a given KPI metric.
-    """
-    # Placeholder drill data; replace with real logic
-    columns = ["SKU", "Detail 1", "Detail 2"]
-    rows = [
-        ["SKU123", "Value A1", "Value B1"],
-        ["SKU456", "Value A2", "Value B2"],
-    ]
-    return {"columns": columns, "rows": rows}
 
 @router.get("/confidence-history", response_model=Dict[str, Any])
 async def get_confidence_history(
@@ -177,3 +234,33 @@ async def get_explanation(
             "impact": "+8.2%"
         }
     }
+
+@router.post("/explain/single", response_model=ForecastExplanation)
+async def explain_single(payload: Dict[str, Any] = Body(...)):
+    """
+    Accepts JSON body with sku_id, store_id, and forecast_date to generate a ForecastExplanation.
+    """
+    # Construct ForecastRow; generated_at and other flags defaulted or omitted
+    row = ForecastRow(
+        sku_id=payload.get('sku_id'),
+        store_id=payload.get('store_id'),
+        forecast_date=datetime.strptime(payload.get('forecast_date'), '%Y-%m-%d').date(),
+        generated_at=date.today(),
+        predicted_demand=0
+    )
+    explanation = generate_forecast_explanation(row)
+    return explanation
+ 
+@router.get("/storycards", response_model=List[Dict[str, Any]])
+async def get_storycards(
+    start: date = Query(...),
+    end: date = Query(...),
+    sku: Optional[str] = Query(None),
+    store: Optional[str] = Query(None),
+    signals: List[str] = Query(default=[])
+):
+    """
+    Generate narrative storycards for given date range, SKU, store, and signals.
+    """
+    cards = generate_narrative_storycards(start, end, sku, store, signals)
+    return cards

@@ -11,6 +11,7 @@ import redis
 from dotenv import load_dotenv
 import logging
 from app.api.dashboard import router as dashboard_router
+from app.api.analytics import router as analytics_router
 
 
 # Configure logging
@@ -52,6 +53,7 @@ templates = Jinja2Templates(directory="templates")
 app.include_router(ingest.router, tags=["Data Ingestion"])
 app.include_router(explain.router, tags=["Forecast Explanations"])
 app.include_router(dashboard_router)
+app.include_router(analytics_router)
 
 @app.on_event("startup")
 def on_startup():
@@ -244,6 +246,106 @@ async def upload_csv_web(request: Request, file: UploadFile = File(...)):
                 logger.info(f"Cleaned up temporary file: {file_path}")
         except Exception as e:
             logger.warning(f"Failed to clean up file {file_path}: {e}")
+
+from typing import List, Optional
+# ...existing code...
+
+"""
+Dashboard API Endpoints for Premium Dashboard UI
+"""
+
+# 1. Metrics Endpoint
+@app.get("/api/dashboard/metrics")
+async def get_dashboard_metrics(
+    start_date: str = Query(...),
+    end_date: str = Query(...),
+    sku: Optional[str] = Query(None),
+    store: Optional[str] = Query(None)
+):
+    # TODO: Replace with real computation from your data source
+    return {
+        "forecast_accuracy": 0.92,
+        "confidence_score": 0.84,
+        "missed_skus": 12,
+        "ai_override_pct": 0.18,
+        "top_influencer_breakdown": {
+            "Weather": 0.4,
+            "Promo": 0.3,
+            "Social": 0.2,
+            "Other": 0.1
+        }
+    }
+
+# 2. Time-Series Data Endpoint
+@app.get("/api/dashboard/timeseries")
+async def get_timeseries(
+    start_date: str = Query(...),
+    end_date: str = Query(...),
+    sku: Optional[str] = Query(None),
+    store: Optional[str] = Query(None)
+):
+    # TODO: Replace with real data
+    return [
+        {
+            "date": "2025-07-01",
+            "actual": 120,
+            "predicted": 130,
+            "overlays": ["holiday", "rain"]
+        },
+        {
+            "date": "2025-07-02",
+            "actual": 110,
+            "predicted": 125,
+            "overlays": ["event"]
+        },
+    ]
+
+# 3. Explanations Endpoint (Batch)
+from fastapi import Body
+@app.post("/api/dashboard/explanations")
+async def get_explanations(batch: List[dict] = Body(...)):
+    # TODO: Replace with real LLM logic
+    return [
+        {
+            "sku": row.get("sku", "SKU-231"),
+            "store": row.get("store", "Bangalore"),
+            "date": row.get("date", "2025-07-10"),
+            "narrative_explanation": "Demand is low due to heavy rainfall and negative social sentiment.",
+            "confidence_score": 0.84,
+            "top_influencer": "Social Trends",
+            "structured_explanation": {"reason": "Promo uplift", "impact": "+8%"}
+        }
+        for row in batch
+    ]
+
+# 4. Storycards Endpoint
+@app.get("/api/dashboard/storycards")
+async def get_storycards(
+    start_date: str = Query(...),
+    end_date: str = Query(...),
+    store: Optional[str] = Query(None)
+):
+    # TODO: Replace with real story generation
+    return [
+        {
+            "headline": "Raincoat demand spiked in Chennai due to Cyclone Biparjoy (↑38%)",
+            "date": "2025-07-05",
+            "impact": 0.38,
+            "type": "spike"
+        },
+        {
+            "headline": "T-shirts dropped post IPL finals across North Tier 1 stores",
+            "date": "2025-07-08",
+            "impact": -0.22,
+            "type": "drop"
+        },
+    ]
+
+# 5. Copilot/Chat Endpoint
+@app.post("/api/dashboard/copilot")
+async def copilot_qa(query: str = Body(...)):
+    # TODO: Integrate with LLM for real answers
+    return {"answer": "Demand is low due to heavy rainfall and negative social sentiment."}
 
 # Error handlers
 @app.exception_handler(404)

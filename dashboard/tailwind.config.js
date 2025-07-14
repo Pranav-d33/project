@@ -1,10 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./dashboard/src/**/*.{js,ts,jsx,tsx}",
-    "./dashboard/index.html",
-    "./templates/**/*.html",
-    "./static/src/**/*.css"
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}"
   ],
   darkMode: 'class',
   theme: {
@@ -25,6 +23,7 @@ module.exports = {
         // Legacy support
         primary: '#1FB6FF',
         accent: '#C49E52',
+        glass: 'rgba(31,182,255,0.1)',
         surface: '#131A24',
         darkbg: '#0A1018',
       },
@@ -50,34 +49,35 @@ module.exports = {
       },
       keyframes: {
         fadeIn: {
-          'from': { opacity: '0', transform: 'translateY(10px)' },
-          'to': { opacity: '1', transform: 'translateY(0)' }
+          from: { opacity: 0 },
+          to: { opacity: 1 }
         },
         slideUp: {
-          'from': { transform: 'translateY(100%)' },
-          'to': { transform: 'translateY(0)' }
+          from: { opacity: 0, transform: 'translateY(8px)' },
+          to: { opacity: 1, transform: 'translateY(0)' }
         },
         skeletonPulse: {
           '0%': { backgroundPosition: '-200px 0' },
           '100%': { backgroundPosition: 'calc(200px + 100%) 0' }
         },
         scaleHover: {
-          'to': { transform: 'scale(1.05)' }
+          from: { transform: 'scale(1)' },
+          to: { transform: 'scale(1.05)' }
         },
         glowPulse: {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(31,182,255,0.3)' },
-          '50%': { boxShadow: '0 0 30px rgba(31,182,255,0.5)' }
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: 0 }
         }
+      },
+      transitionTimingFunction: {
+        'rex-fast': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'rex-normal': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'rex-slow': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
       transitionDuration: {
         'rex-fast': '150ms',
-        'rex-normal': '300ms', 
+        'rex-normal': '300ms',
         'rex-slow': '500ms',
-      },
-      spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
-        '96': '24rem',
       }
     },
   },

@@ -1,6 +1,8 @@
 pydantic
 python-dotenv
 fastapi
+flask
+flask-cors
 pandas
 redis
 google-generativeai
@@ -13,4 +15,5 @@ starlette
 jinja2
 pytrends
 requests
-react
+numpy
+scikit-learn

@@ -7,7 +7,7 @@ import pandas as pd
 import json
 import os
 from datetime import date
-from app.services.context_fetcher import fetch_google_trends, fetch_news_headlines
+# Removed direct imports to ensure dynamic reference via context_fetcher
 import logging
 
 logger = logging.getLogger(__name__)
@@ -47,14 +47,15 @@ def generate_forecast_explanation(forecast_row: ForecastRow, weather_severity: i
 
     # Build contextual summaries
     # Trends
-    trends = fetch_google_trends(input_data['sku_id'])
+    trends = context_fetcher.fetch_google_trends(input_data['sku_id'])
     if trends:
-        pct = round(((trends[-1] - trends[0]) / max(trends[0],1)) * 100,1)
-        trend_summary = f"Interest change: {pct}% over past week (values: {trends})"
+        # Use helper to calculate percent change and direction
+        pct_summary = calculate_pct(trends)  # e.g., 'increased by 10.0%'
+        trend_summary = f"Interest has {pct_summary} over the past week (values: {trends})"
     else:
         trend_summary = "No Google Trends data available"
     # News
-    headlines = fetch_news_headlines(input_data['sku_id'])
+    headlines = context_fetcher.fetch_news_headlines(input_data['sku_id'])
     news_summary = headlines and headlines or []
     news_line = '; '.join(news_summary) if news_summary else 'No relevant news found'
 
@@ -120,18 +121,29 @@ Strictly output this JSON:
     # Call Gemini
     try:
         logger.debug("\n==== LLM PROMPT START ====\n%s\n==== LLM PROMPT END ====", prompt)
-        response = gemini_model.generate(
-            prompt=prompt,
-            temperature=0.3,
-            max_output_tokens=1024,
-            top_p=0.8,
-            top_k=40
+        response = gemini_model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.3,
+                max_output_tokens=1024,
+                top_p=0.8,
+                top_k=40
+            )
         )
         output_text = response.text.strip()
         
-        # Remove markdown backticks if present
+        # Remove markdown backticks and language identifiers if present
         if output_text.startswith('```'):
-            output_text = output_text.strip('`').strip()
+            # Remove opening backticks and any language identifier
+            output_text = output_text[3:].strip()
+            if output_text.startswith('json'):
+                output_text = output_text[4:].strip()
+            # Remove closing backticks
+            if output_text.endswith('```'):
+                output_text = output_text[:-3].strip()
+        elif output_text.startswith('json'):
+            # Handle case where response starts with "json" without backticks
+            output_text = output_text[4:].strip()
         
         json_data = json.loads(output_text)
         

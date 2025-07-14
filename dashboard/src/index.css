@@ -1,0 +1,244 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SorsAI Global Design Tokens */
+:root {
+  --rex-bg-900: #0A1018;
+  --rex-bg-800: #131A24;
+  --rex-blue: #1FB6FF;
+  --rex-blue-soft: rgba(31,182,255,0.15);
+  --rex-gold: #C49E52;
+  --rex-error: #F05454;
+  --rex-white: #F8FAFC;
+  --rex-grey: #9CA3AF;
+  --rex-warning: #F59E0B;
+  --rex-success: #10B981;
+  --radius: 14px;
+  --shadow-card: 0 8px 20px rgba(0,0,0,0.45);
+  --font-display: 'Inter', 'SF Pro Display', sans-serif;
+  --font-body: 'Inter', 'Roboto', sans-serif;
+  --rex-transition-fast: 0.15s ease-out;
+  --rex-transition-normal: 0.3s ease-out;
+  --rex-transition-slow: 0.5s ease-out;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--rex-bg-900);
+  color: var(--rex-white);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Light mode override (if needed) */
+.light body {
+  background-color: #F8FAFC;
+  color: #1F2937;
+}
+
+/* Component Base Classes */
+@layer components {
+  /* Buttons */
+  .rex-btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-rex font-medium transition-all duration-rex-fast;
+    @apply focus:outline-none focus:ring-2 focus:ring-rex-blue focus:ring-offset-2 focus:ring-offset-rex-bg-900;
+  }
+  
+  .rex-btn-primary {
+    @apply rex-btn bg-rex-blue text-white hover:bg-opacity-90 hover:scale-105;
+  }
+  
+  .rex-btn-secondary {
+    @apply rex-btn bg-rex-bg-800 text-rex-white border border-rex-bg-800 hover:border-rex-blue;
+  }
+  
+  .rex-btn-ghost {
+    @apply rex-btn bg-transparent text-rex-grey border border-rex-grey hover:text-rex-white hover:border-rex-white;
+  }
+
+  /* Cards */
+  .rex-card {
+    @apply bg-rex-bg-800 rounded-rex shadow-rex-card transition-all duration-rex-normal;
+  }
+  
+  .rex-card-hover {
+    @apply rex-card hover:shadow-rex-glow hover:-translate-y-1;
+  }
+
+  /* Input Fields */
+  .rex-input {
+    @apply bg-rex-bg-900 border border-rex-bg-800 rounded-lg px-4 py-3 text-rex-white;
+    @apply focus:border-rex-blue focus:ring-2 focus:ring-rex-blue-soft focus:outline-none;
+    @apply transition-all duration-rex-fast;
+  }
+
+  /* Loading States */
+  .rex-skeleton {
+    background: linear-gradient(90deg, 
+      var(--rex-bg-800) 25%, 
+      rgba(31,182,255,0.08) 50%, 
+      var(--rex-bg-800) 75%
+    );
+    background-size: 200px 100%;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    border-radius: var(--radius);
+  }
+
+  .rex-spinner {
+    @apply w-6 h-6 border-2 border-rex-bg-800 border-t-rex-blue rounded-full animate-spin;
+  }
+
+  /* Text Styles */
+  .rex-text-h1 {
+    @apply text-3xl font-bold font-display text-rex-white;
+  }
+  
+  .rex-text-h2 {
+    @apply text-2xl font-semibold font-display text-rex-white;
+  }
+  
+  .rex-text-h3 {
+    @apply text-xl font-medium font-display text-rex-white;
+  }
+  
+  .rex-text-body-lg {
+    @apply text-lg font-body text-rex-white;
+  }
+  
+  .rex-text-body {
+    @apply text-base font-body text-rex-white;
+  }
+  
+  .rex-text-caption {
+    @apply text-sm font-body text-rex-grey;
+  }
+
+  /* Status Indicators */
+  .rex-status-good {
+    @apply text-rex-gold;
+  }
+  
+  .rex-status-error {
+    @apply text-rex-error;
+  }
+  
+  .rex-status-warning {
+    @apply text-rex-warning;
+  }
+
+  /* Responsive Grid */
+  .rex-grid {
+    @apply grid gap-6;
+  }
+  
+  .rex-grid-desktop {
+    @apply rex-grid grid-cols-12;
+  }
+  
+  .rex-grid-tablet {
+    @apply rex-grid grid-cols-8;
+  }
+  
+  .rex-grid-mobile {
+    @apply rex-grid grid-cols-4;
+  }
+
+  /* Custom Range Slider */
+  .rex-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--rex-blue);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  .rex-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--rex-blue);
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  .rex-slider::-webkit-slider-track {
+    background: var(--rex-bg-800);
+    height: 8px;
+    border-radius: 4px;
+  }
+  
+  .rex-slider::-moz-range-track {
+    background: var(--rex-bg-800);
+    height: 8px;
+    border-radius: 4px;
+    border: none;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--rex-bg-900);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--rex-bg-800);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--rex-grey);
+}
+
+/* Chat-specific scrollbar styling */
+.copilot-chat ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.copilot-chat ::-webkit-scrollbar-thumb {
+  background: var(--rex-blue);
+  opacity: 0.6;
+}
+
+/* Message animations */
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-enter {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+/* Smooth scrolling for chat */
+.chat-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Selection */
+::selection {
+  background: var(--rex-blue-soft);
+  color: var(--rex-white);
+}
